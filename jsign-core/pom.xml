@@ -145,4 +145,45 @@
     </plugins>
   </build>
 
+  <profiles>
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>3.2.0</version>
+            <executions>
+              <execution>
+                <id>generate-windows-trusted-keys-file</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <javac srcdir="${project.basedir}/src/test/java"
+                           includes="net/jsign/MicrosoftAuthRootImporter.java"
+                           destdir="${project.build.outputDirectory}"
+                           source="8"
+                           target="8"
+                           includeantruntime="false">
+                      <classpath refid="maven.test.classpath"/>
+                    </javac>
+                    <java classname="net.jsign.MicrosoftAuthRootImporter" fork="true" failonerror="true">
+                      <classpath>
+                        <pathelement location="${project.build.outputDirectory}"/>
+                        <path refid="maven.test.classpath"/>
+                      </classpath>
+                    </java>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
