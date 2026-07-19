@@ -78,15 +78,8 @@ public class MicrosoftAuthRootImporter {
     private static void generateTrustedSubjectPublicKeyHashFile(List<X509Certificate> certificates, PrintWriter out) {
         certificates.sort(Comparator.comparing(t -> t.getSubjectX500Principal().toString()));
         for (X509Certificate certificate : certificates) {
-            out.print(Hex.toHexString(getSubjectPublicKeyInformationHash(certificate))+ "\t" + certificate.getSubjectX500Principal() + "\n");
+            out.print(new PublicKeyHash(certificate) + "\t" + certificate.getSubjectX500Principal() + "\n");
         }
-    }
-
-    /**
-     * Returns the SHA-256 hash of the Subject Public Key Information (SPKI) of the certificate.
-     */
-    private static byte[] getSubjectPublicKeyInformationHash(X509Certificate certificate) {
-        return DigestAlgorithm.SHA256.getMessageDigest().digest(certificate.getPublicKey().getEncoded());
     }
 
     /**
