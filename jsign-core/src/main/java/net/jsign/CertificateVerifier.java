@@ -53,7 +53,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  *
  * @since 8.0
  */
-class CertificateVerifier {
+public class CertificateVerifier {
 
     private final Provider provider = new BouncyCastleProvider();
 

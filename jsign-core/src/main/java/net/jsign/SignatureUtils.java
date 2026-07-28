@@ -214,9 +214,9 @@ public class SignatureUtils {
      *
      * @since 8.0
      */
-    static DigestInfo getDigestInfo(CMSSignedData signature) {
+    public static DigestInfo getDigestInfo(CMSSignedData signature) {
         if (SPC_INDIRECT_DATA_OBJID.equals(signature.getSignedContent().getContentType())) {
-            ASN1Sequence indirectData = (ASN1Sequence) signature.getSignedContent().getContent();
+            ASN1Sequence indirectData = ASN1Sequence.getInstance(signature.getSignedContent().getContent());
             return DigestInfo.getInstance(indirectData.getObjectAt(1));
         }
 

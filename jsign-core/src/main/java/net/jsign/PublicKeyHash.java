@@ -37,7 +37,7 @@ import static java.nio.charset.StandardCharsets.*;
  *
  * @since 8.0
  */
-class PublicKeyHash {
+public class PublicKeyHash {
 
     private final byte[] hash;
 
