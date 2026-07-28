@@ -70,6 +70,7 @@ for various build systems (<a href="#maven">Maven</a>, <a href="#gradle">Gradle<
   <li>Supports multiple signatures per file, for all file types</li>
   <li>Extracts and embeds detached signatures to support <a href="https://reproducible-builds.org/docs/embedded-signatures/">reproducible builds</a></li>
   <li>Certificate chain completion</li>
+  <li>Signature verification with detailed diagnostic</li>
   <li>Hashing algorithms: MD5, SHA-1, SHA-256, SHA-384 and SHA-512</li>
   <li>Keystores supported:
     <ul>
@@ -133,6 +134,7 @@ the all-in-one jar:</p>
   <li><a href="#remove-options">remove</a></li>
   <li><a href="#show-options">show</a></li>
   <li><a href="#tag-options">tag</a></li>
+  <li><a href="#verify-options">verify</a></li>
 </ul>
 
 <p>After the options Jsign accepts one or more files to sign as arguments. The arguments may contain <code>'*'</code>
@@ -436,6 +438,120 @@ option can be used to display more details.</p>
     <p>If no value is specified a default 1KB template is used, filled with zeros and delimited by
     <code style="white-space: nowrap">-----BEGIN TAG-----</code> and <code style="white-space: nowrap">-----END TAG-----</code> markers.</p>
   </dd>
+</dl>
+
+<br>
+
+<h4 id="verify-options">verify</h4>
+
+<p>Verifies the signature of one or more files. The following verifications are performed:</p>
+
+<ul>
+  <li>The computed digest of the file must match the digest stored in the signature.</li>
+  <li>If a timestamp is present, its structure must be valid and its certificate chain trusted.</li>
+  <li>The signature must be standard-compliant and cryptographically correct.</li>
+  <li>The certificate chain must be trusted and valid at the verification date. The extended key usage (EKU) for Code
+      Signing is required. The revocation status (CRL/OCSP) of the certificates in the chain is not checked.</li>
+</ul>
+
+<p>By default, the certificate chains are validated against the root certificates supported by Windows. Extra root
+anchors can be supplied with the <code>certfile</code> parameter.</p>
+
+<p>The command has two levels of detail, by default a summary line is displayed for each signature:</p>
+
+<pre>
+  $ jsign verify application.exe
+  <strong>Signature #1</strong> (SHA1 with RSA 2048) by <strong>Jsign Code Signing Test Certificate 2024</strong> is <span style="color: red">invalid</span> (The file digest does not match the signature)
+  <strong>Signature #2</strong> (SHA256 with RSA 4096) by <strong>Jsign Code Signing Test Certificate 2026</strong> is <span style="color: green">valid</span>
+</pre>
+
+<p>In verbose mode, a detailed diagnostic is displayed:</p>
+
+<pre>
+  $ jsign verify --verbose application.exe
+  <strong>Signature #1</strong> (SHA1 with RSA 2048) by <strong>Jsign Code Signing Test Certificate 2024</strong> is <span style="color: red">invalid</span>
+      <span style="color: red">FAIL</span>  <strong>File Integrity:</strong>          The file digest does not match the signature
+                                     expected: d27ec498912807ddfc4bec2be4f62c42814836f3
+                                     actual:   cb4bc7a2995e6d4b67a56546ecaaf68de6a2efa7
+      <span style="color: green">PASS</span>  <strong>Timestamp:</strong>               Valid RFC 3161 timestamp (Mon Aug 03 19:49:33 CEST 2026)
+      <span style="color: red">FAIL</span>  <strong>Certificate Chain Trust:</strong> Certificate chain is not trusted
+                                     No trust anchor could be established for the chain:
+                                     Jsign Code Signing Test Certificate 2024
+                                       Jsign Code Signing CA 2024
+                                         Jsign Root Certificate Authority 2024
+      <span style="color: green">PASS</span>  <strong>Signature Integrity:</strong>     Signature data is valid
+  
+  <strong>Signature #2</strong> (SHA256 with RSA 4096) by <strong>Jsign Code Signing Test Certificate 2026</strong> is <span style="color: green">valid</span>
+      <span style="color: green">PASS</span>  <strong>File Integrity:</strong>          The file digest matches the signature
+      <span style="color: orange">SKIP</span>  <strong>Timestamp:</strong>               No timestamp found
+      <span style="color: green">PASS</span>  <strong>Certificate Chain Trust:</strong> Certificate chain is trusted
+      <span style="color: green">PASS</span>  <strong>Signature Integrity:</strong>     Signature data is valid
+</pre>
+
+<p>The command returns the following error codes:</p>
+
+<table>
+  <tr>
+    <th>Error Code</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td align="center">0</td>
+    <td>Success (at least one signature is valid)</td>
+  </tr>
+  <tr>
+    <td align="center">1</td>
+    <td>Execution error (invalid command arguments, I/O failure, etc.)</td>
+  </tr>
+  <tr>
+    <td align="center">2</td>
+    <td>The file is not signed</td>
+  </tr>
+  <tr>
+    <td align="center">4</td>
+    <td>Verification failed (all signatures are invalid)</td>
+  </tr>
+</table>
+
+<br>
+
+<dl>
+  <dt>--date &lt;DATE&gt;</dt>
+  <dd>The date at which the signature is verified (overridden by a timestamp).</dd>
+
+  <dt>-c, --certfile &lt;FILE&gt;</dt>
+  <dd>
+    The file containing supplementary trusted CA certificates, in PEM or DER format (<code>.p7b</code>
+    or <code>.spc</code> files). This parameter is required in two cases:
+    <ul>
+      <li>the signature doesn't contain the root certificate and the URL of the root certificate isn't referenced
+        in the Authority Information Access field of the intermediate certificates</li>
+      <li>the root certificate of the signature is not a known Authenticode trust anchor</li>
+    </ul>
+  </dd>
+
+  <dt>--lazy</dt>
+  <dd>Lazy verification stopping at the first issue found for each signature.</dd>
+
+  <dt>--verbose</dt>
+  <dd>Prints a detailed report of the verification.</dd>
+
+  <dt>-e, --encoding &lt;ENCODING&gt;</dt>
+  <dd>
+    The encoding of the script to be verified (if it doesn't contain a byte order mark). Defaults to "UTF-8".
+  </dd>
+
+  <dt>--proxyUrl &lt;URL&gt;</dt>
+  <dd>The URL of the HTTP proxy.</dd>
+
+  <dt>--proxyUser &lt;NAME&gt;</dt>
+  <dd>The user for the HTTP proxy. If a user is needed.</dd>
+
+  <dt>--proxyPass &lt;PASSWORD&gt;</dt>
+  <dd>The password for the HTTP proxy user. If a user is needed.</dd>
+
+  <dt>--nonProxyHosts &lt;HOSTS&gt;</dt>
+  <dd>The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns.</dd>
 </dl>
 
 

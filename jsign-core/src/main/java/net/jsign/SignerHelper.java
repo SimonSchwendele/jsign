@@ -18,6 +18,7 @@ package net.jsign;
 
 import java.io.File;
 import java.util.stream.Stream;
+import java.time.LocalDate;
 
 import net.jsign.timestamp.TimestampingMode;
 
@@ -55,6 +56,7 @@ class SignerHelper {
     public static final String PARAM_FORMAT = "format";
     public static final String PARAM_VALUE = "value";
     public static final String PARAM_VERBOSE = "verbose";
+    public static final String PARAM_DATE = "date";
 
     /** The name used to refer to a configuration parameter */
     private final String parameterName;
@@ -87,6 +89,7 @@ class SignerHelper {
     private String format;
     private String value;
     private boolean verbose;
+    private String date;
 
     public SignerHelper(String parameterName) {
         this.parameterName = parameterName;
@@ -237,6 +240,11 @@ class SignerHelper {
         return this;
     }
 
+    public SignerHelper date(String date) {
+        this.date = date;
+        return this;
+    }
+
     public SignerHelper param(String key, String value) {
         if (value == null) {
             return this;
@@ -269,6 +277,7 @@ class SignerHelper {
             case PARAM_FORMAT:     return format(value);
             case PARAM_VALUE:      return value(value);
             case PARAM_VERBOSE:    return verbose("true".equalsIgnoreCase(value));
+            case PARAM_DATE:       return date(value);
             default:
                 throw new IllegalArgumentException("Unknown " + parameterName + ": " + key);
         }
@@ -340,6 +349,19 @@ class SignerHelper {
 
             case "tag":
                 return new JsignTool().new Tag().value(value);
+
+            case "verify":
+                return new JsignTool().new Verify()
+                        .basedir(basedir)
+                        .date(date != null ? LocalDate.parse(date) : null)
+                        .certfile(certfile)
+                        .lazy(lazy)
+                        .encoding(encoding)
+                        .proxyUrl(proxySettings.url)
+                        .proxyUser(proxySettings.username)
+                        .proxyPass(proxySettings.password)
+                        .nonProxyHosts(proxySettings.nonProxyHosts)
+                        .verbose(verbose);
 
             default:
                 throw new IllegalArgumentException("Unknown command '" + command + "'");

@@ -124,6 +124,7 @@
                     <include>**/PESignerTask</include>
                     <include>**/KeyStoreUtils</include>
                     <include>**/JsignJcaProvider</include>
+                    <include>**/jce/provider/PKIXCertPath*</include>
                     <include>**/jcajce/provider/symmetric/PBE*</include>
                     <include>**/jcajce/provider/symmetric/AES*</include>
                     <include>**/jcajce/provider/asymmetric/RSA*</include>
@@ -187,6 +188,7 @@
                 <option>-dontoptimize</option>
                 <option>-keep public class net.jsign.bouncycastle.jcajce.provider.symmetric.* { *; }</option>
                 <option>-keep public class net.jsign.bouncycastle.jcajce.provider.asymmetric.* { *; }</option>
+                <option>-keep public class net.jsign.bouncycastle.jce.provider.PKIXCertPath* { *; }</option>
                 <option>-keep public class net.jsign.* { *; }</option>
                 <option>-keep public class net.jsign.asn1.authenticode.* { *; }</option>
                 <option>-keep public class net.jsign.asn1.authenticode.* { *; }</option>

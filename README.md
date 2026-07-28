@@ -37,6 +37,7 @@ Jsign is free to use and licensed under the [Apache License version 2.0](https:/
 * Supports multiple signatures per file, for all file types
 * Extracts and embeds detached signatures to support [reproducible builds](https://reproducible-builds.org/docs/embedded-signatures/)
 * Tags signed files with unsigned data (for user identification)
+* Signature verification with detailed diagnostic
 * Hashing algorithms: MD5, SHA-1, SHA-256, SHA-384 and SHA-512
 * Keystores supported:
   * Keystore files (PKCS#12, JKS, JCEKS, PVK/PKCS#1/PKCS#8 keys and PKCS#7 certificates)
@@ -67,6 +68,7 @@ See https://ebourg.github.io/jsign for more information.
 #### Version 8.0 (in development)
 
 * New signing service: Encryption Consulting CodeSign Secure
+* New `verify` command to verify the signatures of a file and display a diagnostic of the issues found
 * New `show` command to display the signatures of a file (contributed by Daniel Schaefer)
 * The new `--nonProxyHosts` parameter allows to specify hosts that should bypass the HTTP proxy
 * The new `--lazy` signing parameter skips files that are already signed

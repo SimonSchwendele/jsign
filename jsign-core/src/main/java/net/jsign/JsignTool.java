@@ -16,7 +16,6 @@
 
 package net.jsign;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -29,7 +28,6 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
@@ -37,6 +35,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -61,6 +61,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerId;
@@ -73,6 +74,10 @@ import net.jsign.asn1.authenticode.SpcLink;
 import net.jsign.asn1.authenticode.SpcSpOpusInfo;
 import net.jsign.timestamp.Timestamper;
 import net.jsign.timestamp.TimestampingMode;
+import net.jsign.verify.CheckResult;
+import net.jsign.verify.SignatureVerifier;
+import net.jsign.verify.VerificationException;
+import net.jsign.verify.VerificationResult;
 
 /**
  * High level API for executing Jsign commands.
@@ -144,6 +149,13 @@ public final class JsignTool {
         return new JsignTool().new Show();
     }
 
+    /**
+     * Creates a builder for the {@code verify} command.
+     */
+    public static Verify verify() {
+        return new JsignTool().new Verify();
+    }
+
     abstract class Command<T extends Command<?>> {
 
         protected final Logger log = Logger.getLogger(getClass().getName());
@@ -165,6 +177,18 @@ public final class JsignTool {
         T basedir(File basedir) {
             this.basedir = basedir;
             return (T) this;
+        }
+
+        File createFile(String file) {
+            if (file == null) {
+                return null;
+            }
+
+            if (new File(file).isAbsolute()) {
+                return new File(file);
+            } else {
+                return new File(basedir, file);
+            }
         }
 
         /**
@@ -1010,29 +1034,13 @@ public final class JsignTool {
                     log.info("  <b>Certificate</b>");
                     log.info("    <b>Subject:</b>       " + formatName(cert.getSubject(), verbose));
                     log.info("    <b>Issuer:</b>        " + formatName(cert.getIssuer(), verbose));
-                    log.info("    <b>Key:</b>           " + getKeyAlgorithm(cert));
+                    log.info("    <b>Key:</b>           " + getKeyAlgorithm(new JcaX509CertificateConverter().getCertificate(cert)));
                     log.info("    <b>Validity:</b>      " + dateFormat.format(cert.getNotBefore()) + " - " + dateFormat.format(cert.getNotAfter()) + " (" + (expired ? "expired" : daysLeft + " days left") + ")");
                     log.info("    <b>Serial:</b>        " + String.format("%032x", cert.getSerialNumber()));
                     log.info("");
                 }
             } catch (Exception e) {
                 throw new CommandException("Couldn't show the signatures of" + file, e);
-            }
-        }
-
-        /**
-         * Returns the algorithm of the public key of the certificate (for example "RSA 2048" or "EC 384").
-         */
-        private String getKeyAlgorithm(X509CertificateHolder certificate) throws IOException, CertificateException {
-            X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certificate.getEncoded()));
-            PublicKey publicKey = cert.getPublicKey();
-
-            if (publicKey instanceof RSAPublicKey) {
-                return "RSA " + ((RSAPublicKey) publicKey).getModulus().bitLength();
-            } else if (publicKey instanceof ECPublicKey) {
-                return "EC " + (((ECPublicKey) publicKey).getParams()).getCurve().getField().getFieldSize();
-            } else {
-                return publicKey.getAlgorithm();
             }
         }
 
@@ -1052,6 +1060,206 @@ public final class JsignTool {
                 }
             }
             return null;
+        }
+    }
+
+    /**
+     * Command for verifying the signatures of a file.
+     */
+    public class Verify extends ProxyCommand<Verify> {
+
+        private LocalDate date;
+        private File certfile;
+        private boolean lazy;
+        private Charset encoding;
+        private boolean verbose;
+
+        /**
+         * The date at which the signature is verified (overridden by a timestamp)
+         */
+        public Verify date(LocalDate date) {
+            this.date = date;
+            return this;
+        }
+
+        /**
+         * Sets the file containing trusted CA certificates.
+         */
+        public Verify certfile(String certfile) {
+            this.certfile = createFile(certfile);
+            return this;
+        }
+
+        /**
+         * Sets the file containing trusted CA certificates.
+         */
+        public Verify certfile(File certfile) {
+            this.certfile = certfile;
+            return this;
+        }
+
+        /**
+         * Lazy verification stopping at the first issue found for each signature.
+         */
+        public Verify lazy(boolean lazy) {
+            this.lazy = lazy;
+            return this;
+        }
+
+        /**
+         * The encoding of the script to be verified (UTF-8 by default, or the encoding specified by the byte order mark if there is one)
+         */
+        public Verify encoding(String encoding) {
+            this.encoding = encoding != null ? Charset.forName(encoding) : null;
+            return this;
+        }
+
+        /**
+         * Print a detailed report of the verification.
+         */
+        public Verify verbose(boolean verbose) {
+            this.verbose = verbose;
+            return this;
+        }
+
+        @Override
+        void execute(File file) throws CommandException {
+            init();
+            execute(file, false);
+        }
+
+        @Override
+        public void execute(Stream<File> files) throws CommandException {
+            Iterator<File> it = files.iterator();
+
+            if (!it.hasNext()) {
+                throw new IllegalArgumentException("No file specified");
+            }
+
+            init();
+
+            while (it.hasNext()) {
+                execute(it.next(), true);
+                if (it.hasNext()) {
+                    log.info("");
+                }
+            }
+        }
+
+        void init() throws CommandException {
+            initializeProxy();
+
+            AnsiFormatter ansiFormatter = new AnsiFormatter();
+            log.setFilter(record -> {
+                record.setMessage(ansiFormatter.format(record.getMessage()));
+                return true;
+            });
+        }
+
+        void execute(File file, boolean batch) throws CommandException {
+            if (!file.exists()) {
+                throw new CommandException("Couldn't find " + file);
+            }
+
+            SignatureVerifier verifier = new SignatureVerifier();
+            verifier.setDate(date != null ? Date.from(date.atStartOfDay(ZoneId.of("UTC")).toInstant()) : null);
+            verifier.setLazy(lazy);
+            if (certfile != null) {
+                try {
+                    for (X509Certificate certificate : CertificateChain.load(certfile)) {
+                        verifier.addTrustedCertificate(certificate);
+                    }
+                } catch (IOException | CertificateException e) {
+                    throw new CommandException("Failed to load the trusted certificates from " + certfile, e);
+                }
+            }
+
+            try (Signable signable = Signable.of(file, encoding)) {
+                VerificationResult result = verifier.verify(signable);
+
+                if (result.getSignatureVerifications().isEmpty()) {
+                    log.info(file + " is <red>not signed</red>");
+                    throw new VerificationException(2, file + " is not signed");
+                }
+
+                if (batch) {
+                    log.info("Verifying " + file + "...");
+                    if (verbose) {
+                        log.info("");
+                    }
+                }
+
+                List<VerificationResult.SignatureVerification> signatureVerifications = result.getSignatureVerifications();
+                for (int i = 0; i < signatureVerifications.size(); i++) {
+                    VerificationResult.SignatureVerification signatureVerification = signatureVerifications.get(i);
+                    String commonName = formatName(new X500Name(signatureVerification.getCertificate().getSubjectX500Principal().getName()), false);
+
+                    StringBuilder message = new StringBuilder();
+                    message.append("<b>Signature #").append(i + 1).append("</b>");
+                    message.append(" (").append(signatureVerification.getDigestAlgorithm()).append(" with ").append(getKeyAlgorithm(signatureVerification.getCertificate())).append(")");
+                    message.append(" by <b>").append(commonName).append("</b>");
+
+                    if (signatureVerification.isValid()) {
+                        message.append(" is <green><b>valid</b></green>");
+                    } else {
+                        message.append(" is <red><b>invalid</b></red>");
+                        if (!verbose) {
+                            message.append(" (").append(signatureVerification.getIssues().get(0).getMessage()).append(")");
+                        }
+                    }
+                    log.info(message.toString());
+
+                    if (verbose) {
+                        for (CheckResult check : signatureVerification.getChecks()) {
+                            message = new StringBuilder();
+                            message.append("    ");
+                            switch (check.getStatus()) {
+                                case PASSED:
+                                    message.append("<green><b>PASS</b></green>");
+                                    break;
+                                case FAILED:
+                                    message.append("<red><b>FAIL</b></red>");
+                                    break;
+                                case SKIPPED:
+                                    message.append("<yellow><b>SKIP</b></yellow>");
+                                    break;
+                            }
+                            message.append("  ");
+
+                            message.append(String.format("%-32s", "<b>" + check.getRule() + ":</b> "));
+                            message.append(check.getMessage());
+
+                            log.info(message.toString());
+
+                            String indent = "                                   ";
+                            if (check.getExpected() != null) {
+                                log.info(indent + "expected: " + check.getExpected());
+                            }
+                            if (check.getActual() != null) {
+                                log.info(indent + "actual:   " + check.getActual());
+                            }
+
+                            if (check.getError() != null && check.getError().getMessage() != null) {
+                                Throwable rootCause = check.getError();
+                                while (rootCause.getCause() != null) {
+                                    rootCause = rootCause.getCause();
+                                }
+
+                                log.info(indent + rootCause.getMessage().replaceAll("\n", "\n" + indent).trim());
+                            }
+                        }
+
+                        log.info("");
+                    }
+                }
+
+                if (!result.isValid()) {
+                    throw new VerificationException(4, "Signature verification failed for " + file);
+                }
+
+            } catch (IOException e){
+                throw new CommandException("Couldn't verify the signature of " + file, e);
+            }
         }
     }
 
@@ -1118,6 +1326,21 @@ public final class JsignTool {
             }, name.getRDNs()).toString().replaceAll("\\\\,", ",");
         } else {
             return name.getRDNs(BCStyle.CN)[0].getFirst().getValue().toString();
+        }
+    }
+
+    /**
+     * Returns the algorithm of the public key of the certificate (for example "RSA 2048" or "EC 384").
+     */
+    private String getKeyAlgorithm(X509Certificate certificate) throws IOException {
+        PublicKey publicKey = certificate.getPublicKey();
+
+        if (publicKey instanceof RSAPublicKey) {
+            return "RSA " + ((RSAPublicKey) publicKey).getModulus().bitLength();
+        } else if (publicKey instanceof ECPublicKey) {
+            return "EC " + (((ECPublicKey) publicKey).getParams()).getCurve().getField().getFieldSize();
+        } else {
+            return publicKey.getAlgorithm();
         }
     }
 }

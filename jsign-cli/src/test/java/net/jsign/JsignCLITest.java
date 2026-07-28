@@ -50,6 +50,7 @@ import org.littleshoot.proxy.impl.DefaultHttpProxyServer;
 import net.jsign.msi.MSIFile;
 import net.jsign.pe.PEFile;
 import net.jsign.script.PowerShellScript;
+import net.jsign.verify.VerificationException;
 
 import static net.jsign.DigestAlgorithm.*;
 import static org.junit.Assert.*;
@@ -773,5 +774,23 @@ public class JsignCLITest {
         cli.execute("tag", "--value", "userid:1234-ABCD-5678-EFGH", "" + targetFile);
         cli.execute("show", "" + targetFile);
         cli.execute("show", "--verbose", "" + targetFile);
+    }
+
+    @Test
+    public void testVerify() throws Exception {
+        testSigning();
+        cli.execute("verify", "--certfile", "target/test-classes/keystores/jsign-test-certificate-full-chain.pem", "" + targetFile);
+    }
+
+    @Test
+    public void testVerifyVerbose() throws Exception {
+        testSigning();
+        cli.execute("verify", "--certfile", "target/test-classes/keystores/jsign-test-certificate-full-chain.pem", "--verbose", "" + targetFile);
+    }
+
+    @Test(expected = VerificationException.class)
+    public void testVerifyVerboseUntrusted() throws Exception {
+        testSigning();
+        cli.execute("verify", "--verbose", "" + targetFile);
     }
 }

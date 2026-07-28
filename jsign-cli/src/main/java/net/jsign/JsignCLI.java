@@ -41,6 +41,8 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BOMInputStream;
 
+import net.jsign.verify.VerificationException;
+
 import static net.jsign.SignerHelper.*;
 import static org.apache.commons.io.ByteOrderMark.*;
 
@@ -55,6 +57,8 @@ public class JsignCLI {
     public static void main(String... args) {
         try {
             new JsignCLI().execute(args);
+        } catch (VerificationException e) {
+            System.exit(e.getErrorCode());
         } catch (CommandException | IllegalArgumentException | ParseException e) {
             System.err.println("jsign: " + e.getMessage());
             if (e.getCause() != null) {
@@ -162,6 +166,18 @@ public class JsignCLI {
         options.addOption(Option.builder().hasArg().longOpt(PARAM_VALUE).argName("VALUE").desc("The value of the unsigned attribute").build());
 
         map.put("tag", options);
+
+        options = new Options();
+        options.addOption(Option.builder().longOpt(PARAM_DATE).hasArg().argName("DATE").desc("The date at which the signature is verified (overridden by a timestamp)").build());
+        options.addOption(Option.builder("c").hasArg().longOpt(PARAM_CERTFILE).argName("FILE").desc("File containing trusted CA certificates").type(File.class).build());
+        options.addOption(Option.builder().longOpt(PARAM_LAZY).desc("Lazy verification stopping at the first issue found for each signature").build());
+        options.addOption(Option.builder("e").hasArg().longOpt(PARAM_ENCODING).argName("ENCODING").desc("The encoding of the script to be verified (UTF-8 by default, or the encoding specified by the byte order mark if there is one)").build());
+        options.addOption(Option.builder().hasArg().longOpt(PARAM_PROXY_URL).argName("URL").desc("The URL of the HTTP proxy").build());
+        options.addOption(Option.builder().hasArg().longOpt(PARAM_PROXY_USER).argName("NAME").desc("The user for the HTTP proxy. If a user is needed").build());
+        options.addOption(Option.builder().hasArg().longOpt(PARAM_PROXY_PASS).argName("PASSWORD").desc("The password for the HTTP proxy user. If a user is needed").build());
+        options.addOption(Option.builder().hasArg().longOpt(PARAM_NON_PROXY_HOSTS).argName("HOSTS").desc("The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns").build());
+
+        map.put("verify", options);
 
         return map;
     }

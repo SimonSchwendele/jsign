@@ -6,7 +6,7 @@ _jsign()
     local cur prev
     _get_comp_words_by_ref cur prev
 
-    local commands="sign timestamp extract remove show tag"
+    local commands="sign timestamp extract remove show tag verify"
 
     declare -A opts
     opts["sign"]="-s --keystore --storepass --storetype -a --alias --keypass --keyfile -c --certfile -d --alg -t --tsaurl -m --tsmode -r --tsretries -w --tsretrywait -n --name -u --url --proxyUrl --proxyUser --proxyPass --nonProxyHosts --replace --lazy -e --encoding --detached --quiet --verbose --debug -h --help"
@@ -15,6 +15,7 @@ _jsign()
     opts["remove"]="-n --name -d --alg"
     opts["show"]="--verbose"
     opts["tag"]="--value"
+    opts["verify"]="--date --lazy -e --encoding -c --certfile --proxyUrl --proxyUser --proxyPass --nonProxyHosts --verbose"
 
     # completion of the first token (either a command or a sign option)
     if [[ $COMP_CWORD == 1 ]]; then
