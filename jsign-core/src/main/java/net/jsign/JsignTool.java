@@ -417,7 +417,7 @@ public final class JsignTool {
             if (ksparams.certfile() != null) {
                 // replace the certificate chain from the keystore with the complete chain from file
                 try {
-                    chain = CertificateUtils.loadCertificateChain(ksparams.certfile());
+                    chain = CertificateChain.load(ksparams.certfile()).toArray();
                 } catch (Exception e) {
                     throw new CommandException("Failed to load the certificate from " + ksparams.certfile(), e);
                 }

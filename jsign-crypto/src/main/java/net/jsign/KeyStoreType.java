@@ -87,7 +87,7 @@ public enum KeyStoreType {
             // load the certificate chain
             Certificate[] chain;
             try {
-                chain = CertificateUtils.loadCertificateChain(params.certfile());
+                chain = CertificateChain.load(params.certfile()).toArray();
             } catch (Exception e) {
                 throw new KeyStoreException("Failed to load the certificate from " + params.certfile(), e);
             }
@@ -792,7 +792,7 @@ public enum KeyStoreType {
             }
 
             try {
-                return CertificateUtils.loadCertificateChain(params.certfile());
+                return CertificateChain.load(params.certfile()).toArray();
             } catch (IOException | CertificateException e) {
                 throw new RuntimeException("Failed to load the certificate from " + params.certfile(), e);
             }

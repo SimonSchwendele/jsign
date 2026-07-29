@@ -418,7 +418,7 @@ public class AuthenticodeSigner {
     }
 
     private CMSSignedDataGenerator createSignedDataGenerator(Signable file, CMSTypedData contentInfo) throws CMSException, OperatorCreationException, CertificateEncodingException {
-        List<X509Certificate> fullChain = CertificateUtils.getFullCertificateChain((Collection) Arrays.asList(chain));
+        List<X509Certificate> fullChain = new CertificateChain(chain).complete().toList();
         if (fullChain.size() > 1) {
             fullChain.removeIf(CertificateUtils::isSelfSigned);
         }
