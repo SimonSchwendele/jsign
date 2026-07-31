@@ -57,7 +57,7 @@ public interface Signable extends Closeable {
      * @since 7.0
      */
     default CMSTypedData createSignedContent(DigestAlgorithm digestAlgorithm) throws IOException {
-        return new PKCS7ProcessableObject(AuthenticodeObjectIdentifiers.SPC_INDIRECT_DATA_OBJID, createIndirectData(digestAlgorithm));
+        return new PKCS7ProcessableObject(AuthenticodeObjectIdentifiers.SPC_INDIRECT_DATA_OBJID, createIndirectData(digestAlgorithm).toASN1Primitive());
     }
 
     /**
