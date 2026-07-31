@@ -442,6 +442,12 @@ public class SignatureVerifierTest {
     }
 
     @Test
+    public void testVerifyUnsupportedCriticalExtension() throws Exception {
+        // The signing certificate has an unsupported critical "Certificate Application Policy" extension (1.3.6.1.4.1.311.21.10)
+        testVerifyDetachedSignature("rfc3161-timestamp-non-critical-eku.p7s", SHA256, "fee8611e65296862facea47bc8f3732074c98401010ecf4d11a0e0b2c762e1ba");
+    }
+
+    @Test
     public void testVerifyLifetimeSigningEKU() throws Exception {
         // The signing certificate has the lifetime-signing EKU, the timestamp must not be checked
         try (MockSignable signable = new MockSignable()) {

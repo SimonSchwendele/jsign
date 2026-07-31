@@ -52,6 +52,7 @@ public interface AuthenticodeObjectIdentifiers {
 
     ASN1ObjectIdentifier OID_CTL                             = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.10.1");
     ASN1ObjectIdentifier OID_KP_LIFETIME_SIGNING             = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.10.3.13");
+    ASN1ObjectIdentifier OID_APPLICATION_CERT_POLICIES       = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.21.10");
 
     ASN1ObjectIdentifier JSIGN_UNSIGNED_DATA_OBJID           = new ASN1ObjectIdentifier("1.3.6.1.4.1.37476.9000.159.1.1");
 

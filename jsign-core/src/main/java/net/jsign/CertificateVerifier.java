@@ -24,9 +24,11 @@ import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXRevocationChecker;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
@@ -34,6 +36,7 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -47,6 +50,8 @@ import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import static net.jsign.asn1.authenticode.AuthenticodeObjectIdentifiers.*;
 
 /**
  * Certificate verifier.
@@ -193,6 +198,24 @@ public class CertificateVerifier {
         PKIXBuilderParameters params = new PKIXBuilderParameters(trustAnchors, selector);
         params.addCertStore(certificateStore);
         params.setDate(date);
+        params.addCertPathChecker(new PKIXCertPathChecker() {
+            public void init(boolean forward) {
+            }
+
+            public boolean isForwardCheckingSupported() {
+                return true;
+            }
+
+            public Set<String> getSupportedExtensions() {
+                return Collections.singleton(OID_APPLICATION_CERT_POLICIES.getId());
+            }
+
+            public void check(Certificate cert, Collection<String> unresolvedCritExts) {
+                if (unresolvedCritExts != null) {
+                    unresolvedCritExts.remove(OID_APPLICATION_CERT_POLICIES.getId());
+                }
+            }
+        });
 
         CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", provider);
 
