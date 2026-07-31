@@ -23,6 +23,7 @@ import java.util.Date;
 import org.apache.commons.io.FileUtils;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import net.jsign.timestamp.TimestampingMode;
@@ -104,6 +105,15 @@ public class SignatureUtilsTest {
 
             DigestInfo digestInfo = SignatureUtils.getDigestInfo(signable.getSignatures().get(0));
             assertNotNull("null digest info", digestInfo);
+        }
+    }
+
+    @Test
+    @Ignore("Bouncy Castle issue #2378 (https://github.com/bcgit/bc-java/issues/2378)")
+    public void testParseSignatureWithInvalidBitString() throws Exception {
+        File file = new File("target/test-classes/signatures/invalid-bitstring-in-spcpeimagedata.p7s");
+        try (MockSignable signable = new MockSignable()) {
+            signable.attachSignatures(file);
         }
     }
 }
