@@ -283,6 +283,9 @@ public class SignatureUtils {
         }
 
         Attribute timestampAttribute = getUnsignedAttribute(signature, SPC_RFC3161_OBJID);
+        if (timestampAttribute == null) {
+            timestampAttribute = getUnsignedAttribute(signature, PKCSObjectIdentifiers.id_aa_signatureTimeStampToken);
+        }
         if (timestampAttribute != null) {
             CMSSignedData signedData = new CMSSignedData(ContentInfo.getInstance(timestampAttribute.getAttrValues().getObjectAt(0)));
 
