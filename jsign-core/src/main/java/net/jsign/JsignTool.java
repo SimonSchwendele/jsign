@@ -154,6 +154,12 @@ public final class JsignTool {
         public Command() {
         }
 
+        /**
+         * Resets the state of the command after a parameter changed.
+         */
+        void reset() {
+        }
+
         T basedir(File basedir) {
             this.basedir = basedir;
             return (T) this;
@@ -175,6 +181,57 @@ public final class JsignTool {
         }
 
         abstract void execute(File file) throws Exception;
+    }
+
+    /**
+     * Base class for commands requiring network access.
+     */
+    abstract class ProxyCommand<T extends ProxyCommand<?>> extends Command<T> {
+        protected ProxySettings proxySettings = new ProxySettings();
+
+        void initializeProxy() throws CommandException {
+            try {
+                proxySettings.initializeProxy();
+            } catch (Exception e) {
+                throw new CommandException("Couldn't initialize proxy", e);
+            }
+        }
+
+        /**
+         * Sets the URL of the HTTP proxy.
+         */
+        public T proxyUrl(String proxyUrl) {
+            proxySettings.url  = proxyUrl;
+            reset();
+            return (T) this;
+        }
+
+        /**
+         * Sets the user for the HTTP proxy.
+         */
+        public T proxyUser(String proxyUser) {
+            proxySettings.username  = proxyUser;
+            reset();
+            return (T) this;
+        }
+
+        /**
+         * Sets the password for the HTTP proxy user.
+         */
+        public T proxyPass(String proxyPass) {
+            proxySettings.password  = proxyPass;
+            reset();
+            return (T) this;
+        }
+
+        /**
+         * Sets the hosts that bypass the HTTP proxy.
+         */
+        public T nonProxyHosts(String nonProxyHosts) {
+            proxySettings.nonProxyHosts = nonProxyHosts;
+            reset();
+            return (T) this;
+        }
     }
 
     /**
@@ -380,11 +437,7 @@ public final class JsignTool {
         }
 
         private AuthenticodeSigner build() throws CommandException {
-            try {
-                proxySettings.initializeProxy();
-            } catch (Exception e) {
-                throw new CommandException("Couldn't initialize proxy", e);
-            }
+            initializeProxy();
 
             KeyStore ks;
             try {
@@ -531,18 +584,14 @@ public final class JsignTool {
     /**
      * Command for adding a timestamp to a signed file.
      */
-    public class Timestamp<T extends Timestamp<?>> extends Command {
+    public class Timestamp<T extends Timestamp<?>> extends ProxyCommand<T> {
 
         String tsaurl;
         TimestampingMode tsmode;
         int tsretries = -1;
         int tsretrywait = -1;
         String alg;
-        ProxySettings proxySettings = new ProxySettings();
         boolean replace;
-
-        void reset() {
-        }
 
         /**
          * Sets the digest algorithm.
@@ -598,42 +647,6 @@ public final class JsignTool {
         }
 
         /**
-         * Sets the URL of the HTTP proxy.
-         */
-        public T proxyUrl(String proxyUrl) {
-            proxySettings.url  = proxyUrl;
-            reset();
-            return (T) this;
-        }
-
-        /**
-         * Sets the user for the HTTP proxy.
-         */
-        public T proxyUser(String proxyUser) {
-            proxySettings.username  = proxyUser;
-            reset();
-            return (T) this;
-        }
-
-        /**
-         * Sets the password for the HTTP proxy user.
-         */
-        public T proxyPass(String proxyPass) {
-            proxySettings.password  = proxyPass;
-            reset();
-            return (T) this;
-        }
-
-        /**
-         * Sets the hosts that bypass the HTTP proxy.
-         */
-        public T nonProxyHosts(String nonProxyHosts) {
-            proxySettings.nonProxyHosts = nonProxyHosts;
-            reset();
-            return (T) this;
-        }
-
-        /**
          * Tells if the previous timestamps should be replaced.
          */
         public Timestamp<?> replace(boolean replace) {
@@ -653,11 +666,7 @@ public final class JsignTool {
                 throw new CommandException("Couldn't find " + file);
             }
 
-            try {
-                proxySettings.initializeProxy();
-            } catch (Exception e) {
-                throw new CommandException("Couldn't initialize proxy", e);
-            }
+            initializeProxy();
 
             try (Signable signable = Signable.of(file)) {
                 if (signable.getSignatures().isEmpty()) {
