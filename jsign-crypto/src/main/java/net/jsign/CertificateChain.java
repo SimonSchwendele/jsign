@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,7 +52,7 @@ import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
  *
  * @since 8.0
  */
-public class CertificateChain {
+public class CertificateChain implements Iterable<X509Certificate> {
 
     private List<X509Certificate> chain;
 
@@ -105,6 +106,11 @@ public class CertificateChain {
      */
     public List<X509Certificate> toList() {
         return new ArrayList<>(chain);
+    }
+
+    @Override
+    public Iterator<X509Certificate> iterator() {
+        return toList().iterator();
     }
 
     /**
