@@ -231,6 +231,11 @@
             <configuration>
               <zipDateTime>${project.build.outputTimestamp}</zipDateTime>
               <zipDateTimeFormatPattern>yyyy-MM-dd'T'HH:mm:ss'Z'</zipDateTimeFormatPattern>
+              <includes>
+                <include>jsign-${project.version}.jar</include>
+                <include>jsign-${project.version}-javadoc.jar</include>
+                <include>jsign-${project.version}-sources.jar</include>
+              </includes>
             </configuration>
           </execution>
         </executions>
