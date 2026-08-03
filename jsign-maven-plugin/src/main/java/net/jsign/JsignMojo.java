@@ -245,15 +245,10 @@ public class JsignMojo extends AbstractMojo {
         }
 
         try {
-            if (file != null) {
-                helper.execute(file);
-            }
-
             if (fileset != null) {
-                for (String filename : new FileSetManager().getIncludedFiles(fileset)) {
-                    File file = new File(fileset.getDirectory(), filename);
-                    helper.execute(file);
-                }
+                helper.execute(Stream.of(new FileSetManager().getIncludedFiles(fileset)).map(filename -> new File(fileset.getDirectory(), filename)));
+            } else if (file != null) {
+                helper.execute(file);
             }
         } catch (CommandException e) {
             throw new MojoFailureException(e.getMessage(), e);

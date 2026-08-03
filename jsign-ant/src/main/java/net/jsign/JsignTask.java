@@ -236,9 +236,7 @@ public class JsignTask extends Task {
             helper.value(value);
 
             if (fileset != null) {
-                for(String fileElement : fileset.getDirectoryScanner().getIncludedFiles()) {
-                    helper.execute(new File(fileset.getDir(), fileElement));
-                }
+                helper.execute(Stream.of(fileset.getDirectoryScanner().getIncludedFiles()).map(filename -> new File(fileset.getDir(), filename)));
             } else {
                 helper.execute(file);
             }

@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -238,33 +237,33 @@ public class JsignCLI {
             throw new CommandException("No file specified");
         }
 
-        for (String arg : cmd.getArgList()) {
-            for (String filename : expand(arg)) {
-                if (!filename.trim().isEmpty() && !filename.startsWith("#")) {
-                    helper.execute(new File(unquote(filename)));
-                }
-            }
-        }
+        Stream<File> files = cmd.getArgList().stream()
+                .flatMap(this::expand)
+                .map(String::trim)
+                .filter(filename -> !filename.isEmpty() && !filename.startsWith("#"))
+                .map(filename -> new File(unquote(filename)));
+
+        helper.execute(files);
     }
 
     /**
      * Expands filenames starting with @ to a list of filenames.
      */
-    private List<String> expand(String filename) {
+    private Stream<String> expand(String filename) {
         if (filename.startsWith("@")) {
             try {
-                return readFile(new File(filename.substring(1)));
+                return readFile(new File(filename.substring(1))).stream();
             } catch (IOException e) {
                 throw new IllegalArgumentException("Failed to read the file list: " + filename.substring(1), e);
             }
         } else if (filename.contains("*")) {
             try {
-                return new DirectoryScanner().scan(filename).stream().map(Path::toString).collect(Collectors.toList());
+                return new DirectoryScanner().scan(filename).stream().map(Path::toString);
             } catch (IOException e) {
                 throw new IllegalArgumentException("Failed to scan the directory: " + filename, e);
             }
         } else {
-            return Collections.singletonList(filename);
+            return Stream.of(filename);
         }
     }
 

@@ -17,6 +17,7 @@
 package net.jsign;
 
 import java.io.File;
+import java.util.stream.Stream;
 
 import net.jsign.timestamp.TimestampingMode;
 
@@ -279,9 +280,17 @@ class SignerHelper {
     }
 
     public void execute(File file) throws CommandException {
+        getCommand().execute(file);
+    }
+
+    public void execute(Stream<File> files) throws CommandException {
+        getCommand().execute(files);
+    }
+
+    private JsignTool.Command<?> getCommand() {
         switch (command) {
             case "sign":
-                new JsignTool().new Sign(parameterName)
+                return new JsignTool().new Sign(parameterName)
                         .basedir(basedir)
                         .keystore(keystore)
                         .storepass(storepass)
@@ -304,12 +313,10 @@ class SignerHelper {
                         .replace(replace)
                         .lazy(lazy)
                         .encoding(encoding)
-                        .detached(detached)
-                        .execute(file);
-                break;
+                        .detached(detached);
 
             case "timestamp":
-                new JsignTool().new Timestamp<>()
+                return new JsignTool().new Timestamp<>()
                         .tsaurl(tsaurl)
                         .tsmode(tsmode != null ? TimestampingMode.of(tsmode) : null)
                         .tsretries(tsretries)
@@ -318,28 +325,21 @@ class SignerHelper {
                         .proxyUser(proxySettings.username)
                         .proxyPass(proxySettings.password)
                         .nonProxyHosts(proxySettings.nonProxyHosts)
-                        .replace(replace)
-                        .execute(file);
-                break;
+                        .replace(replace);
 
             case "extract":
-                new JsignTool().new Extract().format(format).execute(file);
-                break;
+                return new JsignTool().new Extract().format(format);
 
             case "remove":
-                new JsignTool().new Remove()
+                return new JsignTool().new Remove()
                         .alg(alg)
-                        .name(name)
-                        .execute(file);
-                break;
+                        .name(name);
 
             case "show":
-                new JsignTool().new Show().verbose(verbose).execute(file);
-                break;
+                return new JsignTool().new Show().verbose(verbose);
 
             case "tag":
-                new JsignTool().new Tag().value(value).execute(file);
-                break;
+                return new JsignTool().new Tag().value(value);
 
             default:
                 throw new IllegalArgumentException("Unknown command '" + command + "'");

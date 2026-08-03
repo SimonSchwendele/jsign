@@ -42,10 +42,12 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.functors.AndPredicate;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -170,17 +172,28 @@ public final class JsignTool {
          *
          * @param files the files to execute the command on
          */
-        public void execute(File... files) throws Exception {
-            if (files == null || files.length == 0) {
+        public void execute(File... files) throws CommandException {
+            execute(Stream.of(files));
+        }
+
+        /**
+         * Executes the command on the specified files.
+         *
+         * @param files the files to execute the command on
+         */
+        public void execute(Stream<File> files) throws CommandException {
+            Iterator<File> it = files.iterator();
+
+            if (!it.hasNext()) {
                 throw new IllegalArgumentException("No file specified");
             }
 
-            for (File file : files) {
-                execute(file);
+            while (it.hasNext()) {
+                execute(it.next());
             }
         }
 
-        abstract void execute(File file) throws Exception;
+        abstract void execute(File file) throws CommandException;
     }
 
     /**

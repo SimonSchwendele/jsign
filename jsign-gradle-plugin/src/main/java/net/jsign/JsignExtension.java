@@ -16,7 +16,6 @@
 
 package net.jsign;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -60,9 +59,7 @@ public class JsignExtension extends Closure<Void> {
         }
 
         if (fileset != null && !fileset.isEmpty()) {
-            for (File f : fileset) {
-                helper.execute(f);
-            }
+            helper.execute(fileset.getFiles().stream());
         } else {
             helper.execute(file);
         }
