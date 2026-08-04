@@ -287,7 +287,7 @@ scan the installdir directory recursively and sign all the DLLs found.</p>
   <dd>The password for the HTTP proxy user. If a user is needed.</dd>
 
   <dt>--nonProxyHosts &lt;HOSTS&gt;</dt>
-  <dd>The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns.</dd>
+  <dd>The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns. (Jsign 8.0 preview)</dd>
 
   <dt>-n, --name &lt;NAME&gt;</dt>
   <dd>The name of the application</dd>
@@ -303,6 +303,7 @@ scan the installdir directory recursively and sign all the DLLs found.</p>
   <dt>--lazy</dt>
   <dd>
     Skip files that are already signed instead of adding a new signature.
+    (Jsign 8.0 preview)
   </dd>
 
   <dt>-e, --encoding &lt;ENCODING&gt;</dt>
@@ -370,7 +371,7 @@ scan the installdir directory recursively and sign all the DLLs found.</p>
   <dd>The password for the HTTP proxy user. If a user is needed.</dd>
 
   <dt>--nonProxyHosts &lt;HOSTS&gt;</dt>
-  <dd>The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns.</dd>
+  <dd>The hosts that bypass the HTTP proxy, as a pipe-separated list of patterns. (Jsign 8.0 preview)</dd>
 </dl>
 
 <br>
@@ -390,15 +391,19 @@ scan the installdir directory recursively and sign all the DLLs found.</p>
 
 <dl>
   <dt>-d, --alg &lt;ALGORITHM&gt;</dt>
-  <dd>The digest algorithm of the signatures to remove (SHA-1, SHA-256, SHA-384 or SHA-512)</dd>
+  <dd>The digest algorithm of the signatures to remove (SHA-1, SHA-256, SHA-384 or SHA-512). (Jsign 8.0 preview)</dd>
 
   <dt>-n, --name &lt;NAME&gt;</dt>
-  <dd>The certificate name used to select the signatures to remove (partial match). Only signatures whose certificate common name contains this value are removed.</dd>
+  <dd>
+    The certificate name used to select the signatures to remove (partial match). Only signatures whose certificate
+    common name contains this value are removed.
+    (Jsign 8.0 preview)
+  </dd>
 </dl>
 
 <br>
 
-<h4 id="show-options">show</h4>
+<h4 id="show-options">show (Jsign 8.0 preview)</h4>
 
 <p>Displays information about the signatures of a file (certificate, timestamp, digest, tag). The <code>--verbose</code>
 option can be used to display more details.</p>
@@ -442,7 +447,7 @@ option can be used to display more details.</p>
 
 <br>
 
-<h4 id="verify-options">verify</h4>
+<h4 id="verify-options">verify (Jsign 8.0 preview)</h4>
 
 <p>Verifies the signature of one or more files. The following verifications are performed:</p>
 
@@ -805,7 +810,7 @@ holding a client certificate for the authentication. The US DigiCert ONE host is
        --alias test application.exe
 </pre>
 
-<h4 id="example-codesignsecure">Signing with Encryption Consulting CodeSign Secure</h4>
+<h4 id="example-codesignsecure">Signing with Encryption Consulting CodeSign Secure (Jsign 8.0 preview)</h4>
 
 <p>When signing with <a href="https://www.encryptionconsulting.com/code-signing-solution/">Encryption Consulting CodeSign Secure</a>,
 the <code>keystore</code> parameter specifies the API endpoint (it defaults to https://codesignsecure.encryptionconsulting.com).
@@ -1329,7 +1334,7 @@ are the same as those described above for the command line tool (the long option
  }
 </pre>
 
-<p>A higher level API that mimics the command line tool is also available:</p>
+<p>A higher level API that mimics the command line tool is also available: (Jsign 8.0 preview)</p>
 
 <pre>
   JsignTool.sign()
