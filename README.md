@@ -73,7 +73,7 @@ See https://ebourg.github.io/jsign for more information.
 * The new `--nonProxyHosts` parameter allows to specify hosts that should bypass the HTTP proxy
 * The new `--lazy` signing parameter skips files that are already signed
 * The `remove` command can now filter signatures by digest algorithm and certificate name
-* Timed-out connections to the cloud signing services are now retried
+* Timed-out connections and transient errors (HTTP 429 and 5xx) of the cloud signing services are now retried with an exponential backoff
 * Jsign now retries loading PKCS#11 keystores if the token is not ready (contributed by Saad Benbouzid)
 * Jsign can now open read-only or locked files
 * The error message displayed when the PE certificate table is corrupted has been improved
