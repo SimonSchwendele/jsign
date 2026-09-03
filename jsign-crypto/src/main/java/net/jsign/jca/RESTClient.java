@@ -51,7 +51,7 @@ class RESTClient {
     /** Number of attempts for a request */
     private int retries = 5;
 
-    /** Initial pause between retries in milliseconds, doubled after each attempt on error (not on timeouts) */
+    /** Initial pause between retries in milliseconds, base of the exponential backoff on error (fixed pause on timeouts) */
     private int retryWait = 1000;
 
     /** Connect timeout in milliseconds */
@@ -238,8 +238,9 @@ class RESTClient {
 
     /**
      * Opens a connection to the specified URL and makes several attempts if a timeout occurs
-     * or if the server returns a transient error (rate-limit, bad gateway, etc.).
-     * The pause between the attempts grows exponentially unless the server specifies a <code>Retry-After</code> header.
+     * or if the server returns a retryable error (rate-limit, bad gateway, etc.).
+     * The pause between the attempts grows exponentially up to the connect timeout,
+     * unless the server specifies a <code>Retry-After</code> header.
      * The provided configurator is used to set up the connection before making the request.
      */
     private HttpURLConnection open(URL url, HttpURLConnectionHandler configurator) throws IOException {
@@ -251,7 +252,7 @@ class RESTClient {
                 configurator.handle(conn);
 
                 int responseCode = conn.getResponseCode();
-                if (!isProbablyFlakinessError(responseCode) || attempt >= retries) {
+                if (!isRetryableError(responseCode) || attempt >= retries) {
                     return conn;
                 }
 
@@ -261,7 +262,7 @@ class RESTClient {
                     wait = serverDelay;
                     log.fine("Server returned 'RetryAfter': " + serverDelay);
                 } else {
-                    wait = (long) (retryWait * Math.pow(2, attempt - 1));
+                    wait = getBackoffDelayMs(attempt);
                 }
                 log.fine(String.format("HTTP error %d from %s, retrying in %d ms (attempt %d of %d)", responseCode, url, wait, attempt, retries));
                 conn.disconnect();
@@ -278,12 +279,19 @@ class RESTClient {
         }
     }
 
-    private boolean isProbablyFlakinessError(int responseCode) {
+    private boolean isRetryableError(int responseCode) {
         return responseCode == 429
                 || responseCode == HttpURLConnection.HTTP_INTERNAL_ERROR
                 || responseCode == HttpURLConnection.HTTP_BAD_GATEWAY
                 || responseCode == HttpURLConnection.HTTP_UNAVAILABLE
                 || responseCode == HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
+    }
+
+    /**
+     * Returns the exponential backoff delay in milliseconds for the specified attempt, capped to the connect timeout.
+     */
+    private long getBackoffDelayMs(int attempt) {
+        return (long) Math.min(connectTimeout, retryWait * Math.pow(2, attempt - 1));
     }
 
     /**
