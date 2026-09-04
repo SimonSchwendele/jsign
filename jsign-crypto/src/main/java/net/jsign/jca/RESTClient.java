@@ -265,7 +265,6 @@ class RESTClient {
                     wait = getBackoffDelayMs(attempt);
                 }
                 log.fine(String.format("HTTP error %d from %s, retrying in %d ms (attempt %d of %d)", responseCode, url, wait, attempt, retries));
-                conn.disconnect();
                 pause(wait);
             } catch (SocketTimeoutException e) {
                 if (attempt >= retries) {
